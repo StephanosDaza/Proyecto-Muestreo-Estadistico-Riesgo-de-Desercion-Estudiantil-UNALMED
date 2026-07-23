@@ -1,0 +1,11 @@
+# Bases de datos
+*.xlsx
+*.xls
+*.csv
+
+# Archivos temporales de R
+.Rhistory
+.RData
+
+# Configuración local de RStudio
+.Rproj.user/
