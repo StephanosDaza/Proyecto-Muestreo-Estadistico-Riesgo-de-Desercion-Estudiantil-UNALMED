@@ -28,13 +28,9 @@ resumen <- read_csv(
 
 Z <- 2
 
-# Error máximo absoluto permitido para la proporción.
-
+Z <- 2
 B <- 0.02
-
-# Cantidad D de la fórmula
-
-D <- (B^2) / (Z^2)
+D <- (B^2)/(Z^2)
 
 # ----------------------------------------------------------
 # Tamaño poblacional
@@ -111,7 +107,7 @@ cat("B =", B, "\n")
 cat("D =", D, "\n")
 cat("n =", n, "\n\n")
 
-print(resumen)
+print(resumen, width = Inf)
 
 cat("\nSuma de tamaños por estrato =", sum(resumen$nh), "\n")
 
