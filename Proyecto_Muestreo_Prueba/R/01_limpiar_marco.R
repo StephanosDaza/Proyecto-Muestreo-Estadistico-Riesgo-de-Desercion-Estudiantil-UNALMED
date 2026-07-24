@@ -16,15 +16,6 @@ library(stringr)
 
 marco <- read_excel("data/raw/marco.xlsx")
 
-# ----------------------------------------------------------
-# Exploración inicial
-# ----------------------------------------------------------
-
-dim(marco)
-
-names(marco)
-
-str(marco)
 
 # ----------------------------------------------------------
 # Conservar únicamente estudiantes de PREGRADO
@@ -45,6 +36,12 @@ marco <- marco %>%
     DOCUMENTO,
     DEPARTAMENTO_PROCEDENCIA,
     MUNICIPIO_PROCEDENCIA
+  )
+
+marco <- marco %>%
+  mutate(
+    CORREO = str_to_lower(str_trim(CORREO)),
+    DOCUMENTO = as.character(DOCUMENTO)
   )
 
 # ----------------------------------------------------------
@@ -107,3 +104,16 @@ marco <- marco %>%
 table(marco$estrato_mae)
 
 nrow(marco)
+
+# ----------------------------------------------------------
+# Guardar marco muestral limpio
+# ----------------------------------------------------------
+
+write.csv(
+  marco,
+  "data/processed/marco_muestral.csv",
+  row.names = FALSE
+)
+
+cat("\nMarco muestral guardado en:\n")
+cat("data/processed/marco_muestral.csv\n")
