@@ -1,3 +1,27 @@
+# ==========================================================
+# 02_estudio_previo.R
+#
+# Construcción del estudio previo para la estimación de la
+# proporción de estudiantes que cancelan el semestre.
+#
+# Entrada:
+#   data/raw/matriculados_2025_1.xlsx
+#   data/raw/cancelaciones_2025_1.xlsx
+#
+# Salida:
+#   data/processed/estudio_previo.csv
+#
+# Descripción:
+#   - Conserva únicamente estudiantes de pregrado.
+#   - Clasifica los estudiantes en los estratos Local y
+#     Foráneo.
+#   - Identifica los estudiantes con cancelaciones
+#     aprobadas.
+#   - Construye una variable binaria que indica si el
+#     estudiante canceló o no el semestre.
+# ==========================================================
+
+
 #install.packages("readxl")
 #install.packages("dplyr")
 #install.packages("stringr")
@@ -32,7 +56,9 @@ matriculados <- matriculados %>%
   select(
     DOCUMENTO,
     DEPARTAMENTO_PROCEDENCIA,
-    MUNICIPIO_PROCEDENCIA
+    MUNICIPIO_PROCEDENCIA,
+    DEPARTAMENTO_COLEGIO,
+    MUNICIPIO_COLEGIO
   ) %>%
   mutate(
     DOCUMENTO = as.character(DOCUMENTO)
@@ -52,7 +78,13 @@ matriculados <- matriculados %>%
       str_trim(str_to_upper(DEPARTAMENTO_PROCEDENCIA)),
     
     MUNICIPIO_PROCEDENCIA =
-      str_trim(str_to_upper(MUNICIPIO_PROCEDENCIA))
+      str_trim(str_to_upper(MUNICIPIO_PROCEDENCIA)),
+    
+    DEPARTAMENTO_COLEGIO =
+      str_trim(str_to_upper(DEPARTAMENTO_COLEGIO)),
+    
+    MUNICIPIO_COLEGIO =
+      str_trim(str_to_upper(MUNICIPIO_COLEGIO))
   )
 
 # ----------------------------------------------------------
@@ -78,26 +110,93 @@ valle_aburra <- c(
 # Construcción del estrato de muestreo
 # ----------------------------------------------------------
 
+# ----------------------------------------------------------
+# Construcción del estrato de muestreo usando la información
+# de procedencia
+# ----------------------------------------------------------
+
 matriculados <- matriculados %>%
   mutate(
     estrato_mae = case_when(
+      
+      # Local: municipio del Valle de Aburrá
       DEPARTAMENTO_PROCEDENCIA == "ANTIOQUIA" &
         MUNICIPIO_PROCEDENCIA %in% valle_aburra ~ "Local",
       
-      is.na(DEPARTAMENTO_PROCEDENCIA) |
-        is.na(MUNICIPIO_PROCEDENCIA) ~ NA_character_,
+      # Foráneo: departamento diferente de Antioquia
+      !is.na(DEPARTAMENTO_PROCEDENCIA) &
+        DEPARTAMENTO_PROCEDENCIA != "ANTIOQUIA" ~ "Foráneo",
       
-      TRUE ~ "Foráneo"
+      # Foráneo: municipio de Antioquia fuera del Valle de Aburrá
+      DEPARTAMENTO_PROCEDENCIA == "ANTIOQUIA" &
+        !is.na(MUNICIPIO_PROCEDENCIA) &
+        !(MUNICIPIO_PROCEDENCIA %in% valle_aburra) ~ "Foráneo",
+      
+      # No fue posible clasificar
+      TRUE ~ NA_character_
     )
   )
 
 # ----------------------------------------------------------
-# Eliminar registros sin información suficiente
+# Intentar clasificar los registros restantes utilizando la
+# información del colegio
 # ----------------------------------------------------------
 
 matriculados <- matriculados %>%
-  filter(!is.na(estrato_mae))
+  mutate(
+    estrato_mae = case_when(
+      
+      # Si ya fue clasificado, conservar la clasificación
+      !is.na(estrato_mae) ~ estrato_mae,
+      
+      # Local según el colegio
+      DEPARTAMENTO_COLEGIO == "ANTIOQUIA" &
+        MUNICIPIO_COLEGIO %in% valle_aburra ~ "Local",
+      
+      # Foráneo según el departamento del colegio
+      !is.na(DEPARTAMENTO_COLEGIO) &
+        DEPARTAMENTO_COLEGIO != "ANTIOQUIA" ~ "Foráneo",
+      
+      # Foráneo según municipio del colegio
+      DEPARTAMENTO_COLEGIO == "ANTIOQUIA" &
+        !is.na(MUNICIPIO_COLEGIO) &
+        !(MUNICIPIO_COLEGIO %in% valle_aburra) ~ "Foráneo",
+      
+      # Sigue siendo imposible clasificar
+      TRUE ~ NA_character_
+    )
+  )
 
+# ----------------------------------------------------------
+# Revisión manual de registros sin clasificar
+# ----------------------------------------------------------
+#
+# Se identificaron dos registros que no pudieron
+# clasificarse automáticamente.
+#
+# Caso 1:
+# Mediante la revisión del nombre y la dirección del
+# establecimiento educativo se determinó que el estudiante
+# proviene de Puerto Nare (Antioquia), municipio que no
+# pertenece al Valle de Aburrá. Por tanto, se clasifica
+# como Foráneo.
+#
+# Caso 2:
+# El registro no contenía información del establecimiento
+# educativo ni del municipio o departamento de procedencia.
+# Sin embargo, la información de residencia correspondía al
+# municipio de Cocorná (Antioquia), el cual se encuentra
+# fuera del Valle de Aburrá. En consecuencia, el registro
+# también se clasifica como Foráneo.
+# ----------------------------------------------------------
+
+matriculados <- matriculados %>%
+  mutate(
+    estrato_mae = case_when(
+      DOCUMENTO %in% c("70385513", "1011512781") ~ "Foráneo",
+      TRUE ~ estrato_mae
+    )
+  )
 # ----------------------------------------------------------
 # Conservar únicamente cancelaciones aprobadas
 # ----------------------------------------------------------
@@ -135,13 +234,6 @@ estudio_previo <- estudio_previo %>%
 # ----------------------------------------------------------
 
 dim(estudio_previo)
-
-table(estudio_previo$estrato_mae)
-
-table(estudio_previo$cancelo)
-
-table(estudio_previo$estrato_mae,
-      estudio_previo$cancelo)
 
 estudio_previo %>%
   count(estrato_mae, cancelo)
