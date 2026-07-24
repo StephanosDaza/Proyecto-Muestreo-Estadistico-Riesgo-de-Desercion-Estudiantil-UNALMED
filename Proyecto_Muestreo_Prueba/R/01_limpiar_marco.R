@@ -69,6 +69,25 @@ marco <- marco %>%
     DOCUMENTO = as.character(DOCUMENTO)
   )
 
+# ----------------------------------------------------------
+# Normalizar texto
+# ----------------------------------------------------------
+
+marco <- marco %>%
+  mutate(
+    DEPARTAMENTO_PROCEDENCIA =
+      str_trim(str_to_upper(DEPARTAMENTO_PROCEDENCIA)),
+    
+    MUNICIPIO_PROCEDENCIA =
+      str_trim(str_to_upper(MUNICIPIO_PROCEDENCIA)),
+    
+    DEPARTAMENTO_COLEGIO =
+      str_trim(str_to_upper(DEPARTAMENTO_COLEGIO)),
+    
+    MUNICIPIO_COLEGIO =
+      str_trim(str_to_upper(MUNICIPIO_COLEGIO))
+  )
+
 
 # ----------------------------------------------------------
 # Municipios del Valle de Aburrá
