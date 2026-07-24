@@ -1,3 +1,24 @@
+# ==========================================================
+# 03_resumen_estudio_previo.R
+#
+# Resumen descriptivo del estudio previo utilizado para la
+# estimación del tamaño de muestra de una proporción bajo
+# Muestreo Aleatorio Estratificado (MAE).
+#
+# Entrada:
+#   data/processed/estudio_previo.csv
+#
+# Salida:
+#   data/processed/resumen_estudio_previo.csv
+#
+# Descripción:
+#   - Calcula el tamaño de cada estrato.
+#   - Estima la proporción de estudiantes que cancelaron
+#     el semestre en cada estrato.
+#   - Calcula la proporción complementaria, la varianza,
+#     la desviación estándar y el peso de cada estrato.
+# ==========================================================
+
 #install.packages("readr")
 #install.packages("dplyr")
 
@@ -13,6 +34,14 @@ library(dplyr)
 # ----------------------------------------------------------
 
 estudio_previo <- read_csv("data/processed/estudio_previo.csv")
+
+# ----------------------------------------------------------
+# Verificación del estudio previo
+# ----------------------------------------------------------
+
+dim(estudio_previo)
+
+count(estudio_previo, estrato_mae)
 
 # ----------------------------------------------------------
 # Resumen por estrato
@@ -69,7 +98,9 @@ resumen_estudio_previo <- resumen_estudio_previo %>%
 # Mostrar resultados
 # ----------------------------------------------------------
 
-print(resumen_estudio_previo)
+resumen_estudio_previo
+
+sum(resumen_estudio_previo$Wh)
 
 # ----------------------------------------------------------
 # Guardar resultados
