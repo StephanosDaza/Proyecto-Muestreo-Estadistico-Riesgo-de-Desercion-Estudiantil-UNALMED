@@ -1,0 +1,82 @@
+#install.packages("readr")
+#install.packages("dplyr")
+
+# -----------------------------
+# Cargar librerías
+# -----------------------------
+
+library(readr)
+library(dplyr)
+
+# ----------------------------------------------------------
+# Leer estudio previo
+# ----------------------------------------------------------
+
+estudio_previo <- read_csv("data/processed/estudio_previo.csv")
+
+# ----------------------------------------------------------
+# Resumen por estrato
+# ----------------------------------------------------------
+
+resumen_estudio_previo <- estudio_previo %>%
+  group_by(estrato_mae) %>%
+  summarise(
+    
+    # Tamaño del estrato
+    Nh = n(),
+    
+    # Proporción de cancelación
+    Ph = mean(cancelo),
+    
+    # Proporción de no cancelación
+    Qh = 1 - Ph,
+    
+    # Varianza de la variable indicadora
+    Sh2 = var(cancelo),
+    
+    # Desviación estándar
+    Sh = sd(cancelo)
+    
+  )
+
+# ----------------------------------------------------------
+# Peso de cada estrato
+# ----------------------------------------------------------
+
+N <- sum(resumen_estudio_previo$Nh)
+
+resumen_estudio_previo <- resumen_estudio_previo %>%
+  mutate(
+    Wh = Nh / N
+  )
+
+# ----------------------------------------------------------
+# Reordenar columnas
+# ----------------------------------------------------------
+
+resumen_estudio_previo <- resumen_estudio_previo %>%
+  select(
+    estrato_mae,
+    Nh,
+    Wh,
+    Ph,
+    Qh,
+    Sh2,
+    Sh
+  )
+
+# ----------------------------------------------------------
+# Mostrar resultados
+# ----------------------------------------------------------
+
+print(resumen_estudio_previo)
+
+# ----------------------------------------------------------
+# Guardar resultados
+# ----------------------------------------------------------
+
+write.csv(
+  resumen_estudio_previo,
+  "data/processed/resumen_estudio_previo.csv",
+  row.names = FALSE
+)
