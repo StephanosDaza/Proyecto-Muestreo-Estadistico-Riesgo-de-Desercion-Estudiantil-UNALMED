@@ -102,6 +102,8 @@ denominador <-
   (N^2 * D) +
   sum(resumen$Nh * resumen$Sh2)
 
+n
+
 n <- ceiling(numerador / denominador)
 
 # ----------------------------------------------------------
