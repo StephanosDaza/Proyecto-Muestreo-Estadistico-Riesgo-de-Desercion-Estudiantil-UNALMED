@@ -1,7 +1,21 @@
 # ==========================================================
 # 06_resumen_muestra_piloto.R
-# Resumen de la muestra piloto para la variable
-# Gasto mensual
+#
+# Construcción del resumen estadístico de la muestra piloto
+# para la variable Gasto mensual.
+#
+# Entrada:
+#   data/processed/encuesta_limpia.csv
+#   data/processed/marco_muestral.csv
+#
+# Salida:
+#   data/processed/resumen_muestra_piloto.csv
+#
+# Descripción:
+#   - Selecciona una muestra piloto de tamaño fijo.
+#   - Calcula los tamaños poblacionales por estrato.
+#   - Obtiene la media y la varianza del gasto mensual
+#     en cada estrato.
 # ==========================================================
 
 # ----------------------------------------------------------
@@ -21,37 +35,27 @@ encuesta <- read_csv(
 )
 
 # ----------------------------------------------------------
-# Parámetro:
 # Tamaño de la muestra piloto
 # ----------------------------------------------------------
 
 tam_piloto <- 30
 
+# Si la encuesta contiene más de 30 respuestas,
+# se selecciona aleatoriamente una muestra piloto
+# de tamaño 30.
+
 # ----------------------------------------------------------
 # Seleccionar muestra piloto
 # ----------------------------------------------------------
 
-# Si la encuesta tiene más respuestas que el tamaño piloto,
-# se toman únicamente las primeras 'tam_piloto'.
-
-if(nrow(encuesta) > tam_piloto){
-  
+if(nrow(encuesta) > tam_piloto) {
+  # Selección aleatoria reproducible
   set.seed(123)
   encuesta <- encuesta %>%
     slice_sample(n = tam_piloto)
   
 }
 
-# ----------------------------------------------------------
-# Eliminar registros sin estrato
-# ----------------------------------------------------------
-
-encuesta <- encuesta %>%
-  filter(!is.na(estrato_mae))
-
-# ----------------------------------------------------------
-# Resumen por estrato
-# ----------------------------------------------------------
 
 # ----------------------------------------------------------
 # Leer marco muestral
@@ -66,15 +70,15 @@ marco <- read_csv(
 # Tamaños poblacionales por estrato
 # ----------------------------------------------------------
 
-tam_estratos <- marco %>%
+estratos <- marco %>%
   count(
     estrato_mae,
     name = "Nh"
   )
 
-N <- sum(tam_estratos$Nh)
+N <- sum(estratos$Nh)
 
-tam_estratos <- tam_estratos %>%
+estratos <- estratos %>%
   mutate(
     Wh = Nh / N
   )
@@ -89,17 +93,17 @@ resumen_piloto <- encuesta %>%
     
     nh_piloto = n(),
     
-    media = mean(gasto_mensual),
+    media = mean(gasto_mensual, na.rm = TRUE),
     
-    Sh = sd(gasto_mensual),
+    Sh = sd(gasto_mensual, na.rm = TRUE),
     
-    Sh2 = var(gasto_mensual),
+    Sh2 = var(gasto_mensual, na.rm = TRUE),
     
     .groups = "drop"
     
   ) %>%
   left_join(
-    tam_estratos,
+    estratos,
     by = "estrato_mae"
   ) %>%
   select(
@@ -124,7 +128,7 @@ cat("Número de observaciones piloto:",
     sum(resumen_piloto$nh_piloto),
     "\n\n")
 
-print(resumen_piloto)
+print(resumen_piloto, width = Inf)
 
 # ----------------------------------------------------------
 # Guardar resultados

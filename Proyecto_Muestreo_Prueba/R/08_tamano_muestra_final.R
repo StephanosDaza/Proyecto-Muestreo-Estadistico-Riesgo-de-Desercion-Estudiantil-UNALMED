@@ -1,7 +1,22 @@
 # ==========================================================
 # 08_tamano_muestra_final.R
-# Selección del tamaño de muestra definitivo
-# Se toma el mayor tamaño de muestra requerido
+#
+# Selección del tamaño de muestra definitivo del estudio.
+#
+# Entrada:
+#   data/processed/tamano_muestra_prop.csv
+#   data/processed/tamano_muestra_media.csv
+#
+# Salida:
+#   data/processed/tamano_muestra_final.csv
+#   data/processed/resumen_tamano_muestra.csv
+#
+# Descripción:
+#   - Compara los tamaños de muestra obtenidos para la
+#     proporción y la media.
+#   - Selecciona el mayor tamaño de muestra.
+#   - Guarda la asignación definitiva por estrato y un
+#     resumen del diseño muestral.
 # ==========================================================
 
 # ----------------------------------------------------------
@@ -34,7 +49,9 @@ n_prop <- sum(prop$nh)
 n_media <- sum(media$nh)
 
 # ----------------------------------------------------------
-# Seleccionar el mayor
+# Se selecciona el mayor tamaño de muestra
+# para garantizar la precisión requerida
+# para todas las variables de interés.
 # ----------------------------------------------------------
 
 if (n_media >= n_prop) {
@@ -43,7 +60,7 @@ if (n_media >= n_prop) {
   
   diseno_final <- media
   
-  parametro_control <- "Media"
+  variable_control <- "Media"
   
 } else {
   
@@ -51,9 +68,11 @@ if (n_media >= n_prop) {
   
   diseno_final <- prop
   
-  parametro_control <- "Proporción"
+  variable_control <- "Proporción"
   
 }
+
+stopifnot(sum(diseno_final$nh) == n_final)
 
 # ----------------------------------------------------------
 # Mostrar resultados
@@ -66,12 +85,10 @@ cat("=====================================\n")
 cat("n (Proporción) =", n_prop, "\n")
 cat("n (Media)      =", n_media, "\n")
 cat("-------------------------------------\n")
-cat("Parámetro que controla el diseño:", parametro_control, "\n")
+cat("Variable que controla el diseño:", variable_control, "\n")
 cat("Tamaño de muestra definitivo =", n_final, "\n\n")
 
 print(diseno_final, width = Inf)
-
-cat("\nSuma de tamaños por estrato =", sum(diseno_final$nh), "\n")
 
 # ----------------------------------------------------------
 # Guardar asignación definitiva
@@ -91,7 +108,7 @@ resumen_final <- tibble(
   n_proporcion = n_prop,
   n_media = n_media,
   n_final = n_final,
-  parametro_control = parametro_control
+  variable_control = variable_control
 )
 
 write.csv(

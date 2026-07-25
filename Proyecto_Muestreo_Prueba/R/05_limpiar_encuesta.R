@@ -1,6 +1,23 @@
 # ==========================================================
 # 05_limpiar_encuesta.R
-# Limpieza de la encuesta piloto
+#
+# Limpieza y preparación de la base de datos obtenida a
+# partir de la encuesta piloto.
+#
+# Entrada:
+#   data/raw/encuesta.xlsx
+#   data/processed/marco_muestral.csv
+#
+# Salida:
+#   data/processed/encuesta_limpia.csv
+#
+# Descripción:
+#   - Renombra las variables de la encuesta.
+#   - Estandariza los correos institucionales.
+#   - Convierte la variable gasto mensual a formato numérico.
+#   - Elimina registros incompletos y duplicados.
+#   - Vincula la encuesta con el marco muestral para
+#     incorporar el estrato de muestreo.
 # ==========================================================
 
 # ----------------------------------------------------------
@@ -31,9 +48,15 @@ names(encuesta) <- c(
   "recursos_suficientes",
   "gasto_mensual",
   "afectacion_rendimiento",
-  "considero_cancelar",
-  "razon_economica"
+  "considero_cancelar"
 )
+
+# ----------------------------------------------------------
+# Eliminar variable descartada
+# ----------------------------------------------------------
+
+encuesta <- encuesta %>%
+  select(-last_col())
 
 # ----------------------------------------------------------
 # Limpiar correo institucional
@@ -45,7 +68,7 @@ encuesta <- encuesta %>%
   )
 
 # ----------------------------------------------------------
-# Limpiar gasto mensual
+# Estandarizar la variable gasto mensual
 # ----------------------------------------------------------
 
 encuesta <- encuesta %>%
@@ -58,12 +81,34 @@ encuesta <- encuesta %>%
   )
 
 # ----------------------------------------------------------
+# Construcción de variables binarias para el análisis
+# ----------------------------------------------------------
+
+encuesta <- encuesta %>%
+  mutate(
+    afectacion_rendimiento_bin = if_else(
+      afectacion_rendimiento == "Sí",
+      1,
+      0
+    ),
+    
+    considero_cancelar_bin = if_else(
+      considero_cancelar == "Sí",
+      1,
+      0
+    )
+    
+  )
+
+# ----------------------------------------------------------
 # Eliminar respuestas sin correo
 # ----------------------------------------------------------
 
 encuesta <- encuesta %>%
-  filter(!is.na(CORREO),
-         CORREO != "")
+  filter(
+    !is.na(CORREO),
+    CORREO != ""
+  )
 
 # ----------------------------------------------------------
 # Eliminar respuestas sin gasto
@@ -99,7 +144,16 @@ marco <- marco %>%
   )
 
 # ----------------------------------------------------------
-# Cruzar encuesta con marco muestral
+# Verificar el marco muestral
+# ----------------------------------------------------------
+
+dim(marco)
+
+count(marco, estrato_mae)
+
+# ----------------------------------------------------------
+# Incorporar el estrato de muestreo
+# mediante el correo institucional
 # ----------------------------------------------------------
 
 encuesta <- encuesta %>%
@@ -107,6 +161,9 @@ encuesta <- encuesta %>%
     marco,
     by = "CORREO"
   )
+
+encuesta %>%
+  filter(is.na(estrato_mae))
 
 # ----------------------------------------------------------
 # Verificaciones

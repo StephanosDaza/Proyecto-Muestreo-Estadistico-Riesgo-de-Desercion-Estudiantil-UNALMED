@@ -1,8 +1,22 @@
 # ==========================================================
 # 07_tamano_muestra_media.R
-# Tamaño de muestra para estimar una media en MAE
-# Afijación óptima de Neyman (costos iguales)
-# Controlando Error Máximo Relativo (EMR)
+#
+# Cálculo del tamaño de muestra para la estimación de una
+# media bajo Muestreo Aleatorio Estratificado (MAE),
+# utilizando la afijación óptima de Neyman con costos
+# iguales y controlando el Error Máximo Relativo (EMR).
+#
+# Entrada:
+#   data/processed/resumen_muestra_piloto.csv
+#
+# Salida:
+#   data/processed/tamano_muestra_media.csv
+#
+# Descripción:
+#   - Estima la media poblacional preliminar.
+#   - Convierte el EMR en un error absoluto.
+#   - Calcula el tamaño global de muestra.
+#   - Obtiene la afijación óptima de Neyman.
 # ==========================================================
 
 # ----------------------------------------------------------
@@ -49,8 +63,8 @@ resumen <- resumen %>%
   )
 
 # ----------------------------------------------------------
-# Estimación preliminar de la media poblacional
-# usando la muestra piloto estratificada
+# Estimación preliminar de la media poblacional mediante
+# la media estratificada de la muestra piloto
 # ----------------------------------------------------------
 
 mu_piloto <-
@@ -58,11 +72,13 @@ mu_piloto <-
 
 # ----------------------------------------------------------
 # Error máximo absoluto equivalente
+# B = ε × media preliminar
 # ----------------------------------------------------------
 
 B <- epsilon * mu_piloto
 
-# Cantidad D
+# Constante utilizada en la expresión
+# del tamaño de muestra
 
 D <- (B^2) / (Z^2)
 
@@ -72,7 +88,7 @@ D <- (B^2) / (Z^2)
 
 resumen <- resumen %>%
   mutate(
-    w = (Nh * Sh) / sum(Nh * Sh)
+    peso_neyman = (Nh * Sh) / sum(Nh * Sh)
   )
 
 # ----------------------------------------------------------
@@ -80,7 +96,7 @@ resumen <- resumen %>%
 # ----------------------------------------------------------
 
 numerador <-
-  sum((resumen$Nh^2 * resumen$Sh2) / resumen$w)
+  sum((resumen$Nh^2 * resumen$Sh2) / resumen$peso_neyman)
 
 denominador <-
   (N^2 * D) +
@@ -94,7 +110,7 @@ n <- ceiling(numerador / denominador)
 
 resumen <- resumen %>%
   mutate(
-    nh_teorico = n * w,
+    nh_teorico = n * peso_neyman,
     nh = round(nh_teorico)
   )
 
@@ -106,7 +122,7 @@ diferencia <- n - sum(resumen$nh)
 
 if(diferencia != 0){
   
-  indice <- which.max(resumen$w)
+  indice <- which.max(resumen$peso_neyman)
   
   resumen$nh[indice] <-
     resumen$nh[indice] + diferencia
