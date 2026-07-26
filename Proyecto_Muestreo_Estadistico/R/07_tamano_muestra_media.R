@@ -43,9 +43,9 @@ resumen <- read_csv(
 
 Z <- 2
 
-# Error máximo relativo (10%)
+# Error máximo relativo (8%)
 
-epsilon <- 0.10
+epsilon <- 0.08
 
 # ----------------------------------------------------------
 # Tamaño poblacional
