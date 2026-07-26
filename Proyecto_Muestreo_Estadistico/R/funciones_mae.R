@@ -11,12 +11,6 @@ library(rlang)
 # Funciones auxiliares
 # ==========================================================
 
-fpc <- function(Nh, nh){
-  
-  1 - nh/Nh
-  
-}
-
 error_estandar <- function(varianza){
   
   sqrt(varianza)
@@ -89,12 +83,18 @@ resumen_estratos <- function(datos,
       fh = nh / Nh,
       
       var_media =
-        (1 - fh) *
+        fpc(Nh, nh) *
         varianza /
         nh,
       
       ee_media =
-        sqrt(var_media)
+        error_estandar(var_media),
+      
+      tau_h =
+        Nh * media,
+      
+      var_total_h =
+        Nh^2 * var_media
       
     )
   
@@ -184,7 +184,7 @@ estimar_total_mae <- function(datos,
                               tam_estratos,
                               z = 2){
   
-  media <-
+  resultado_media <-
     
     estimar_media_mae(
       
@@ -205,7 +205,7 @@ estimar_total_mae <- function(datos,
   total <-
     
     N *
-    media$resumen_global$estimacion
+    resultado_media$resumen_global$estimacion
   
   varianza <-
     
@@ -236,7 +236,149 @@ estimar_total_mae <- function(datos,
     
     resumen_global = resumen_global,
     
-    resumen_estratos = media$resumen_estratos
+    resumen_estratos = resultado_media$resumen_estratos
+    
+  )
+  
+}
+
+# ==========================================================
+# Estimación de una proporción
+# ==========================================================
+
+estimar_proporcion_mae <- function(datos,
+                                   variable,
+                                   estrato,
+                                   tam_estratos,
+                                   z = 2){
+  
+  resumen <-
+    
+    resumen_estratos(
+      
+      datos,
+      
+      {{variable}},
+      
+      {{estrato}},
+      
+      tam_estratos
+      
+    )
+  
+  N <- sum(tam_estratos$Nh)
+  
+  proporcion <-
+    
+    sum(
+      
+      resumen$Nh *
+        resumen$media
+      
+    ) / N
+  
+  varianza <-
+    
+    sum(
+      
+      resumen$Nh^2 *
+        resumen$var_media
+      
+    ) / N^2
+  
+  ee <- error_estandar(varianza)
+  
+  ic <- ic_normal(proporcion, ee, z)
+  
+  resumen_global <-
+    
+    tibble(
+      
+      estimacion = proporcion,
+      
+      varianza = varianza,
+      
+      ee = ee,
+      
+      LI = ic$LI,
+      
+      LS = ic$LS
+      
+    )
+  
+  list(
+    
+    resumen_global = resumen_global,
+    
+    resumen_estratos = resumen
+    
+  )
+  
+}
+
+# ==========================================================
+# Estimación del total de unidades con la característica
+# ==========================================================
+
+estimar_caracteristica_mae <- function(datos,
+                                       variable,
+                                       estrato,
+                                       tam_estratos,
+                                       z = 2){
+  
+  resultado_prop <-
+    
+    estimar_proporcion_mae(
+      
+      datos,
+      
+      {{variable}},
+      
+      {{estrato}},
+      
+      tam_estratos,
+      
+      z
+      
+    )
+  
+  N <- sum(tam_estratos$Nh)
+  
+  total <-
+    
+    N *
+    resultado_prop$resumen_global$estimacion
+  
+  varianza <-
+    
+    N^2 *
+    resultado_prop$resumen_global$varianza
+  
+  ee <- error_estandar(varianza)
+  
+  ic <- ic_normal(total, ee, z)
+  
+  resumen_global <-
+    
+    tibble(
+      
+      estimacion = total,
+      
+      varianza = varianza,
+      
+      ee = ee,
+      
+      LI = ic$LI,
+      
+      LS = ic$LS
+      
+    )
+  
+  list(
+    
+    resumen_global = resumen_global,
+    
+    resumen_estratos = resultado_prop$resumen_estratos
     
   )
   
