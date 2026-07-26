@@ -11,6 +11,12 @@ library(rlang)
 # Funciones auxiliares
 # ==========================================================
 
+fpc <- function(Nh, nh){
+  
+  1 - nh / Nh
+  
+}
+
 error_estandar <- function(varianza){
   
   sqrt(varianza)
@@ -158,6 +164,10 @@ estimar_media_mae <- function(datos,
       
       ee = ee,
       
+      cv = ee / media,
+      
+      cv_porcentaje = 100 * ee / media,
+      
       LI = ic$LI,
       
       LS = ic$LS
@@ -210,7 +220,7 @@ estimar_total_mae <- function(datos,
   varianza <-
     
     N^2 *
-    media$resumen_global$varianza
+    resultado_media$resumen_global$varianza
   
   ee <- error_estandar(varianza)
   
@@ -225,6 +235,10 @@ estimar_total_mae <- function(datos,
       varianza = varianza,
       
       ee = ee,
+      
+      cv = ee / total,
+      
+      cv_porcentaje = 100 * ee / total,
       
       LI = ic$LI,
       
@@ -300,6 +314,10 @@ estimar_proporcion_mae <- function(datos,
       
       ee = ee,
       
+      cv = ee / proporcion,
+      
+      cv_porcentaje = 100 * ee / proporcion,
+      
       LI = ic$LI,
       
       LS = ic$LS
@@ -367,6 +385,10 @@ estimar_caracteristica_mae <- function(datos,
       varianza = varianza,
       
       ee = ee,
+      
+      cv = ee / total,
+      
+      cv_porcentaje = 100 * ee / total,
       
       LI = ic$LI,
       

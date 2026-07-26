@@ -2,10 +2,12 @@
 # 09_preparar_muestra_inferencia.R
 #
 # Selección aleatoria de la muestra definitiva para la
-# inferencia bajo MAE.
+# inferencia bajo Muestreo Aleatorio Estratificado (MAE).
 #
-# Se utilizan los tamaños de muestra teóricos obtenidos
-# durante el diseño muestral.
+# A partir de la base consolidada de respuestas se selecciona
+# una muestra aleatoria simple independiente dentro de cada
+# estrato, utilizando los tamaños de muestra definidos en el
+# diseño muestral.
 # ==========================================================
 
 library(readxl)
@@ -13,7 +15,7 @@ library(dplyr)
 library(readr)
 
 #----------------------------------------------------------
-# Semilla
+# Semilla para garantizar reproducibilidad
 #----------------------------------------------------------
 
 set.seed(345)
@@ -28,14 +30,17 @@ base <-
     "data/processed/Base_Consolidada_Final.xlsx"
   )
 
-
-# ----------------------------------------------------------
+#----------------------------------------------------------
 # Preparación de variables
-# ----------------------------------------------------------
+#----------------------------------------------------------
 
 base <-
   
   base |>
+  
+  filter(
+    !is.na(ORIGEN)
+  ) |>
   
   mutate(
     
@@ -64,7 +69,7 @@ base <-
   )
 
 #----------------------------------------------------------
-# Tamaños teóricos
+# Tamaños de muestra por estrato
 #----------------------------------------------------------
 
 n_local <- 262
@@ -72,42 +77,82 @@ n_local <- 262
 n_foraneo <- 260
 
 #----------------------------------------------------------
-# Selección aleatoria por estrato
+# Selección aleatoria independiente por estrato
 #----------------------------------------------------------
+
+base_local <-
+  
+  base |>
+  
+  filter(
+    ORIGEN == "Local"
+  )
+
+base_foraneo <-
+  
+  base |>
+  
+  filter(
+    ORIGEN == "Foráneo"
+  )
+
+stopifnot(
+  nrow(base_local) >= n_local,
+  nrow(base_foraneo) >= n_foraneo
+)
 
 muestra_local <-
   
-  base |>
+  base_local |>
   
-  filter(ORIGEN == "Local") |>
-  
-  slice_sample(n = n_local)
+  slice_sample(
+    n = n_local
+  )
 
 muestra_foraneo <-
   
-  base |>
+  base_foraneo |>
   
-  filter(ORIGEN == "Foráneo") |>
-  
-  slice_sample(n = n_foraneo)
+  slice_sample(
+    n = n_foraneo
+  )
+
+#----------------------------------------------------------
+# Construcción de la muestra definitiva
+#----------------------------------------------------------
 
 muestra_final <-
   
   bind_rows(
+    
     muestra_local,
+    
     muestra_foraneo
+    
   )
 
 #----------------------------------------------------------
-# Verificación
+# Verificaciones
 #----------------------------------------------------------
+
+cat("\nDistribución por estrato:\n")
 
 muestra_final |>
   
-  count(ORIGEN)
+  count(ORIGEN) |>
+  
+  print()
+
+cat("\nTamaño total de la muestra:", nrow(muestra_final), "\n")
+
+stopifnot(
+  nrow(muestra_final) ==
+    n_local +
+    n_foraneo
+)
 
 #----------------------------------------------------------
-# Guardar base definitiva
+# Guardar muestra definitiva
 #----------------------------------------------------------
 
 write_csv(
@@ -117,3 +162,5 @@ write_csv(
   "data/processed/muestra_inferencia.csv"
   
 )
+
+cat("\nMuestra guardada correctamente.\n")
