@@ -57,6 +57,7 @@ marco <- marco %>%
   select(
     CORREO,
     DOCUMENTO,
+    PBM,
     DEPARTAMENTO_PROCEDENCIA,
     MUNICIPIO_PROCEDENCIA,
     DEPARTAMENTO_COLEGIO,
